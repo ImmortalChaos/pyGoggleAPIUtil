@@ -34,9 +34,9 @@ def faceDetection(file_name):
 
     return faces
 
-def getLandmark(face, id):
+def getLandmark(face, tid):
 	for landmark in face.landmarks:
-		if landmark.type == id :
+		if landmark.type == tid :
 			return landmark.position
 	return None
 
@@ -52,18 +52,18 @@ def drawFaceLine(draw, face, pt1, pt2):
 def drawFacePoint(draw, face):
 	'''
 	Reference : https://cloud.google.com/vision/docs/reference/rest/v1/images/annotate
-	enumStr = ["UNKNOWN", "LEFT_EYE", "RIGHT_EYE", "LEFT_OF_LEFT_EYEBROW", "RIGHT_OF_LEFT_EYEBROW", "LEFT_OF_RIGHT_EYEBROW", 
-	           "RIGHT_OF_RIGHT_EYEBROW", "MIDPOINT_BETWEEN_EYES", "NOSE_TIP", "UPPER_LIP", "LOWER_LIP", 
-	           "MOUTH_LEFT", "MOUTH_RIGHT", "MOUTH_CENTER", "NOSE_BOTTOM_RIGHT", "NOSE_BOTTOM_LEFT", 
-	           "NOSE_BOTTOM_CENTER", "LEFT_EYE_TOP_BOUNDARY", "LEFT_EYE_RIGHT_CORNER", "LEFT_EYE_BOTTOM_BOUNDARY", "LEFT_EYE_LEFT_CORNER", 
-	           "RIGHT_EYE_TOP_BOUNDARY", "RIGHT_EYE_RIGHT_CORNER", "RIGHT_EYE_BOTTOM_BOUNDARY", "RIGHT_EYE_LEFT_CORNER", "LEFT_EYEBROW_UPPER_MIDPOINT", 
-	           "RIGHT_EYEBROW_UPPER_MIDPOINT", "LEFT_EAR_TRAGION", "RIGHT_EAR_TRAGION", "LEFT_EYE_PUPIL", "RIGHT_EYE_PUPIL", 
-	           "FOREHEAD_GLABELLA", "CHIN_GNATHION", "CHIN_LEFT_GONION", "CHIN_RIGHT_GONION", 
+	enumStr = ["UNKNOWN", "LEFT_EYE", "RIGHT_EYE", "LEFT_OF_LEFT_EYEBROW", "RIGHT_OF_LEFT_EYEBROW", "LEFT_OF_RIGHT_EYEBROW",
+	           "RIGHT_OF_RIGHT_EYEBROW", "MIDPOINT_BETWEEN_EYES", "NOSE_TIP", "UPPER_LIP", "LOWER_LIP",
+	           "MOUTH_LEFT", "MOUTH_RIGHT", "MOUTH_CENTER", "NOSE_BOTTOM_RIGHT", "NOSE_BOTTOM_LEFT",
+	           "NOSE_BOTTOM_CENTER", "LEFT_EYE_TOP_BOUNDARY", "LEFT_EYE_RIGHT_CORNER", "LEFT_EYE_BOTTOM_BOUNDARY", "LEFT_EYE_LEFT_CORNER",
+	           "RIGHT_EYE_TOP_BOUNDARY", "RIGHT_EYE_RIGHT_CORNER", "RIGHT_EYE_BOTTOM_BOUNDARY", "RIGHT_EYE_LEFT_CORNER", "LEFT_EYEBROW_UPPER_MIDPOINT",
+	           "RIGHT_EYEBROW_UPPER_MIDPOINT", "LEFT_EAR_TRAGION", "RIGHT_EAR_TRAGION", "LEFT_EYE_PUPIL", "RIGHT_EYE_PUPIL",
+	           "FOREHEAD_GLABELLA", "CHIN_GNATHION", "CHIN_LEFT_GONION", "CHIN_RIGHT_GONION",
 	           "X", "X", "X", "X", "X", "X", "X"]
 	'''
 	colStr = ["#ff0000", "#00ff00", "#0000ff", "#ffff00", "#00ffff", "#000000"]
-	lineInfos = [(32, 33), (27, 33), (27, 3), (3, 25), (25, 4), (4, 31), (31, 5), (4, 7), (5, 7), (5, 26), (26, 6), (6, 28), 
-	             (28, 34), (34, 32), (7, 8), (15, 8), (14, 8), (15, 16), (14, 16), (8, 16), (7, 15), (7, 14), 
+	lineInfos = [(32, 33), (27, 33), (27, 3), (3, 25), (25, 4), (4, 31), (31, 5), (4, 7), (5, 7), (5, 26), (26, 6), (6, 28),
+	             (28, 34), (34, 32), (7, 8), (15, 8), (14, 8), (15, 16), (14, 16), (8, 16), (7, 15), (7, 14),
 	             (11, 9), (9, 12), (11, 13), (13, 12), (11, 10), (10, 12),
 	             (20, 17), (17, 18), (20, 19), (19, 18), (24, 21), (21, 22), (24, 23), (23, 22)]
 	index = 0
