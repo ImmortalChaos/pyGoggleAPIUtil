@@ -1,6 +1,7 @@
 import io, os
 import argparse
 from google.cloud import vision
+from PIL import Image, ImageDraw
 
 def faceDetection(file_name):
     # Instantiates a client
@@ -19,6 +20,7 @@ def faceDetection(file_name):
     # Names of likelihood from google.cloud.vision.enums
     likelihood_name = ('UNKNOWN', 'VERY_UNLIKELY', 'UNLIKELY', 'POSSIBLE',
                        'LIKELY', 'VERY_LIKELY')
+    print(faces)
     print('Faces:')
     for face in faces:
         print('anger: {}'.format(likelihood_name[face.anger_likelihood]))
@@ -29,6 +31,75 @@ def faceDetection(file_name):
                     for vertex in face.bounding_poly.vertices])
 
         print('face bounds: {}'.format(','.join(vertices)))
+
+    return faces
+
+def getLandmark(face, tid):
+	for landmark in face.landmarks:
+		if landmark.type == tid :
+			return landmark.position
+	return None
+
+def drawFaceLine(draw, face, pt1, pt2):
+	pt1Info = getLandmark(face, pt1)
+	pt2Info = getLandmark(face, pt2)
+	if pt1Info is None or pt2Info is None:
+		return
+
+	draw.line([(pt1Info.x, pt1Info.y), (pt2Info.x, pt2Info.y)], fill='#00ff00', width=2)
+
+
+def drawFacePoint(draw, face):
+	'''
+	Reference : https://cloud.google.com/vision/docs/reference/rest/v1/images/annotate
+	enumStr = ["UNKNOWN", "LEFT_EYE", "RIGHT_EYE", "LEFT_OF_LEFT_EYEBROW", "RIGHT_OF_LEFT_EYEBROW", "LEFT_OF_RIGHT_EYEBROW",
+	           "RIGHT_OF_RIGHT_EYEBROW", "MIDPOINT_BETWEEN_EYES", "NOSE_TIP", "UPPER_LIP", "LOWER_LIP",
+	           "MOUTH_LEFT", "MOUTH_RIGHT", "MOUTH_CENTER", "NOSE_BOTTOM_RIGHT", "NOSE_BOTTOM_LEFT",
+	           "NOSE_BOTTOM_CENTER", "LEFT_EYE_TOP_BOUNDARY", "LEFT_EYE_RIGHT_CORNER", "LEFT_EYE_BOTTOM_BOUNDARY", "LEFT_EYE_LEFT_CORNER",
+	           "RIGHT_EYE_TOP_BOUNDARY", "RIGHT_EYE_RIGHT_CORNER", "RIGHT_EYE_BOTTOM_BOUNDARY", "RIGHT_EYE_LEFT_CORNER", "LEFT_EYEBROW_UPPER_MIDPOINT",
+	           "RIGHT_EYEBROW_UPPER_MIDPOINT", "LEFT_EAR_TRAGION", "RIGHT_EAR_TRAGION", "LEFT_EYE_PUPIL", "RIGHT_EYE_PUPIL",
+	           "FOREHEAD_GLABELLA", "CHIN_GNATHION", "CHIN_LEFT_GONION", "CHIN_RIGHT_GONION",
+	           "X", "X", "X", "X", "X", "X", "X"]
+	'''
+	colStr = ["#ff0000", "#00ff00", "#0000ff", "#ffff00", "#00ffff", "#000000"]
+	lineInfos = [(32, 33), (27, 33), (27, 3), (3, 25), (25, 4), (4, 31), (31, 5), (4, 7), (5, 7), (5, 26), (26, 6), (6, 28),
+	             (28, 34), (34, 32), (7, 8), (15, 8), (14, 8), (15, 16), (14, 16), (8, 16), (7, 15), (7, 14),
+	             (11, 9), (9, 12), (11, 13), (13, 12), (11, 10), (10, 12),
+	             (20, 17), (17, 18), (20, 19), (19, 18), (24, 21), (21, 22), (24, 23), (23, 22)]
+	index = 0
+	for landmark in face.landmarks:
+		draw.point([landmark.position.x, landmark.position.y], fill='#ff0000')
+		draw.text((landmark.position.x, landmark.position.y-16), str(landmark.type), fill=colStr[index%6])
+		index+=1
+	print("Total landmark :" + str(index))
+	for ln in lineInfos:
+		drawFaceLine(draw, face, ln[0], ln[1])
+
+def drawFaceMark(draw, face):
+	box = [(vertex. x, vertex.y)
+	       for vertex in face.bounding_poly.vertices]
+	draw.line(box + [box[0]], width=3, fill='#00ff00')
+
+	draw.text(((face.bounding_poly.vertices)[0].x,
+		       (face.bounding_poly.vertices)[0].y - 30),
+	           str(format(face.detection_confidence, '.3f')) + '%',
+	           fill='#FF0000')
+
+	box = [(vertex. x, vertex.y)
+	       for vertex in face.fd_bounding_poly.vertices]
+	draw.line(box + [box[0]], width=2, fill='#33ff33')
+
+	drawFacePoint(draw, face)
+
+def saveImage(file_name, faces, output_name, show_marking):
+	im = Image.open(file_name)
+	draw = ImageDraw.Draw(im)
+
+	for face in faces:
+		if show_marking is True:
+			drawFaceMark(draw, face)
+
+	im.save(output_name)
 
 def check_valid_argument(arg_val):
     """
@@ -43,8 +114,12 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Face Detection Program')
     parser.add_argument('-source', type=str, required=True, default=os.getcwd(),
                         help='Appoint the source folder or file path')
+    parser.add_argument('-target', type=str, default=None, help='Appoint the target folder')
+    parser.add_argument('-show_marking', default=False, action='store_true',
+                        help='Displays the found area.')
     args = parser.parse_args()
     source_file = args.source
 
     if check_valid_argument(args):
-        faceDetection(source_file)
+        faces = faceDetection(source_file)
+        saveImage(source_file, faces, args.target, args.show_marking)
