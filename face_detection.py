@@ -3,7 +3,7 @@ import argparse
 from google.cloud import vision
 from PIL import Image, ImageDraw
 
-def faceDetection(file_name):
+def face_detection(file_name):
     # Instantiates a client
     client = vision.ImageAnnotatorClient()
 
@@ -33,6 +33,13 @@ def faceDetection(file_name):
         print('face bounds: {}'.format(','.join(vertices)))
 
     return faces
+
+def get_filename(img_path):
+    """
+    get filename from image path
+    """
+    filename = os.path.splitext(img_path)
+    return os.path.basename(filename[0])
 
 def getLandmark(face, tid):
 	for landmark in face.landmarks:
@@ -91,15 +98,42 @@ def drawFaceMark(draw, face):
 
 	drawFacePoint(draw, face)
 
-def saveImage(file_name, faces, output_name, show_marking):
-	im = Image.open(file_name)
-	draw = ImageDraw.Draw(im)
+def cropFace(img, face, file_name, target_path, index_face):
+    filename = get_filename(file_name)
+    target_filepath = os.path.join(target_path, filename+"_"+str(index_face)+".png")
+    print(target_filepath)
+    area = (face.bounding_poly.vertices[0].x, face.bounding_poly.vertices[0].y, face.bounding_poly.vertices[2].x, face.bounding_poly.vertices[2].y)
+    cropped_img = img.crop(area)
+    cropped_img.save(target_filepath)
 
-	for face in faces:
-		if show_marking is True:
-			drawFaceMark(draw, face)
+def save_image(file_name, faces, target_path, show_marking, crop_face):
+    img = Image.open(file_name)
+    draw = ImageDraw.Draw(img)
+    index_face = 0
 
-	im.save(output_name)
+    for face in faces:
+        if show_marking is True:
+            drawFaceMark(draw, face)
+        if crop_face is True:
+            index_face += 1
+            cropFace(img, face, file_name, target_path, index_face)
+
+    if show_marking is True and crop_face is False:
+        img.save(target_path)
+
+def detect_images(folder_path, show_marking, crop_face, target_path):
+    """
+    detection from sub-folders
+    """
+    for (paths, dirs, files) in os.walk(folder_path):
+        for filename in files:
+            ext = os.path.splitext(filename)[-1]
+            if ext in ('.png', '.jpg'):
+                detect_path = os.path.join(paths, filename)
+                faces = face_detection(detect_path, show_marking, crop_face, target_path)
+                save_image(detect_path, faces, target_path, show_marking, crop_face)
+                if len(faces)== 0:
+                    print(detect_path + "(detection fail!)")
 
 def check_valid_argument(arg_val):
     """
@@ -117,9 +151,14 @@ if __name__ == '__main__':
     parser.add_argument('-target', type=str, default=None, help='Appoint the target folder')
     parser.add_argument('-show_marking', default=False, action='store_true',
                         help='Displays the found area.')
+    parser.add_argument('-crop_face', default=False, action='store_true',
+                        help='Saves the detected face area as an image.')
     args = parser.parse_args()
     source_file = args.source
 
     if check_valid_argument(args):
-        faces = faceDetection(source_file)
-        saveImage(source_file, faces, args.target, args.show_marking)
+        if os.path.isdir(source_file):
+            detect_images(source_file, args.show_marking, args.crop_face, args.target)
+        else:
+            faces = face_detection(source_file)
+            save_image(source_file, faces, args.target, args.show_marking, args.crop_face)
