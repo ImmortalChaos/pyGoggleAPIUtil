@@ -125,12 +125,12 @@ def detect_images(folder_path, show_marking, crop_face, target_path):
     """
     detection from sub-folders
     """
-    for (paths, dirs, files) in os.walk(folder_path):
+    for (paths, _, files) in os.walk(folder_path):
         for filename in files:
             ext = os.path.splitext(filename)[-1]
             if ext in ('.png', '.jpg'):
                 detect_path = os.path.join(paths, filename)
-                faces = face_detection(detect_path, show_marking, crop_face, target_path)
+                faces = face_detection(detect_path)
                 save_image(detect_path, faces, target_path, show_marking, crop_face)
                 if len(faces)== 0:
                     print(detect_path + "(detection fail!)")
